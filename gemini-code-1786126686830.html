@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>귀금속 시세 계산 대시보드</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #0b0f19;
+            color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .card-container {
+            background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 24px;
+            padding: 32px 26px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 25px rgba(212, 175, 55, 0.15);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #fef08a;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        /* 시세 직접 입력 세션 */
+        .input-section {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .input-wrapper input {
+            width: 110px;
+            padding: 6px 10px;
+            background: #0f172a;
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            border-radius: 8px;
+            color: #fbbf24;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-align: right;
+            outline: none;
+        }
+
+        .input-wrapper input:focus {
+            border-color: #fef08a;
+            box-shadow: 0 0 8px rgba(254, 240, 138, 0.3);
+        }
+
+        .input-wrapper span {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        /* 탭 스타일 */
+        .tab-container {
+            display: flex;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 14px;
+            padding: 4px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            gap: 2px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 0;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #eab308, #ca8a04);
+            color: #0f172a;
+            box-shadow: 0 2px 8px rgba(234, 179, 8, 0.3);
+        }
+
+        .tab-btn.silver-active {
+            background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+            color: #0f172a;
+            box-shadow: 0 2px 8px rgba(226, 232, 240, 0.3);
+        }
+
+        /* 시세 카드 */
+        .price-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .price-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .price-type .label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .price-type .title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .price-info {
+            text-align: right;
+        }
+
+        .price-amount {
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: #fbbf24;
+            letter-spacing: -0.5px;
+        }
+
+        .price-unit {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #cbd5e1;
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card-container">
+        <div class="header">
+            <h1 id="main-title">🏆 귀금속 시세 계산기</h1>
+            <div class="subtitle" id="gold-subtitle">순금 24K (3.75g / 1돈 기준)</div>
+        </div>
+
+        <!-- 기준 시세 직접 입력 영역 -->
+        <div class="input-section">
+            <div class="input-group">
+                <label for="gold-input">🪙 순금(24K) 1돈 살때</label>
+                <div class="input-wrapper">
+                    <input type="number" id="gold-input" value="530000" step="1000" oninput="updatePrices()">
+                    <span>원</span>
+                </div>
+            </div>
+            <div class="input-group">
+                <label for="silver-input">🥈 순은(99.9%) 1돈 살때</label>
+                <div class="input-wrapper">
+                    <input type="number" id="silver-input" value="6000" step="100" oninput="updatePrices()">
+                    <span>원</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 탭 메뉴 -->
+        <div class="tab-container">
+            <button class="tab-btn active" onclick="switchTab('24k')">순금 24K</button>
+            <button class="tab-btn" onclick="switchTab('18k')">18K</button>
+            <button class="tab-btn" onclick="switchTab('14k')">14K</button>
+            <button class="tab-btn" onclick="switchTab('silver')">🥈 은 시세</button>
+        </div>
+
+        <!-- 시세 출력 카드 -->
+        <div class="price-grid">
+            <div class="price-card">
+                <div class="price-type">
+                    <span class="label" id="buy-label">소비자 구매 기준</span>
+                    <span class="title">🛒 내가 살 때</span>
+                </div>
+                <div class="price-info">
+                    <div class="price-amount" id="buy-price">0 <span class="price-unit">원</span></div>
+                </div>
+            </div>
+
+            <div class="price-card">
+                <div class="price-type">
+                    <span class="label" id="sell-label">소비자 매도 기준</span>
+                    <span class="title">💰 내가 팔 때</span>
+                </div>
+                <div class="price-info">
+                    <div class="price-amount" id="sell-price" style="color: #60a5fa;">0 <span class="price-unit">원</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            * 입력하신 기준가는 브라우저에 자동 저장됩니다.
+        </div>
+    </div>
+
+    <script>
+        let currentTab = '24k';
+
+        // 페이지 로드 시 저장된 값 불러오기
+        window.onload = function() {
+            const savedGold = localStorage.getItem('user_gold_price');
+            const savedSilver = localStorage.getItem('user_silver_price');
+
+            if (savedGold) document.getElementById('gold-input').value = savedGold;
+            if (savedSilver) document.getElementById('silver-input').value = savedSilver;
+
+            updatePrices();
+        };
+
+        // 탭 전환
+        function switchTab(type) {
+            currentTab = type;
+            
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(btn => btn.classList.remove('active', 'silver-active'));
+
+            const titleEl = document.getElementById('main-title');
+            const subtitleEl = document.getElementById('gold-subtitle');
+
+            if (type === '24k') {
+                tabs[0].classList.add('active');
+                titleEl.innerText = "🏆 귀금속 시세 계산기";
+                subtitleEl.innerText = "순금 24K (3.75g / 1돈 기준)";
+            } else if (type === '18k') {
+                tabs[1].classList.add('active');
+                titleEl.innerText = "🏆 귀금속 시세 계산기";
+                subtitleEl.innerText = "18K 금 시세 (순금 24K × 0.75 기준)";
+            } else if (type === '14k') {
+                tabs[2].classList.add('active');
+                titleEl.innerText = "🏆 귀금속 시세 계산기";
+                subtitleEl.innerText = "14K 금 시세 (순금 24K × 0.585 기준)";
+            } else if (type === 'silver') {
+                tabs[3].classList.add('silver-active');
+                titleEl.innerText = "🥈 은(Silver) 시세 계산기";
+                subtitleEl.innerText = "순은 99.9% (3.75g / 1돈 기준)";
+            }
+
+            updatePrices();
+        }
+
+        // 입력값 기준 시세 계산 함수
+        function updatePrices() {
+            const goldBuyInput = parseFloat(document.getElementById('gold-input').value) || 0;
+            const silverBuyInput = parseFloat(document.getElementById('silver-input').value) || 0;
+
+            // 로컬 스토리지 저장
+            localStorage.setItem('user_gold_price', goldBuyInput);
+            localStorage.setItem('user_silver_price', silverBuyInput);
+
+            const buyPriceEl = document.getElementById('buy-price');
+            const sellPriceEl = document.getElementById('sell-price');
+
+            let buyPrice = 0;
+            let sellPrice = 0;
+
+            if (currentTab === 'silver') {
+                buyPriceEl.style.color = '#e2e8f0';
+                
+                buyPrice = silverBuyInput;
+                // 은 팔 때 기준 (일반적으로 살 때 시세의 약 80% 수준)
+                sellPrice = Math.round(silverBuyInput * 0.80);
+
+            } else {
+                buyPriceEl.style.color = '#fbbf24';
+
+                // 금 팔 때 기준 (24K 살 때 시세의 약 87% 수준)
+                const base24kSell = goldBuyInput * 0.87;
+
+                if (currentTab === '24k') {
+                    buyPrice = goldBuyInput;
+                    sellPrice = Math.round(base24kSell);
+                } else if (currentTab === '18k') {
+                    buyPrice = Math.round(goldBuyInput * 0.75);
+                    sellPrice = Math.round(base24kSell * 0.75);
+                } else if (currentTab === '14k') {
+                    buyPrice = Math.round(goldBuyInput * 0.585);
+                    sellPrice = Math.round(base24kSell * 0.585);
+                }
+            }
+
+            buyPriceEl.innerHTML = `${buyPrice.toLocaleString()} <span class="price-unit">원</span>`;
+            sellPriceEl.innerHTML = `${sellPrice.toLocaleString()} <span class="price-unit">원</span>`;
+        }
+    </script>
+</body>
+</html>
