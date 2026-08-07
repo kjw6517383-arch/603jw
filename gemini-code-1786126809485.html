@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>귀금속 시세 실시간 통합 대시보드</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #0b0f19;
+            color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 30px 20px;
+        }
+
+        .dashboard-container {
+            background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 28px;
+            padding: 40px 36px;
+            width: 100%;
+            max-width: 960px; /* 화면을 넓게 쓰도록 최대 너비 확장 */
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(212, 175, 55, 0.12);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fef08a;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            margin-top: 6px;
+        }
+
+        /* 상단 기준 시세 입력 바 */
+        .input-bar {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px 28px;
+            margin-bottom: 32px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .input-group label {
+            font-size: 0.95rem;
+            color: #cbd5e1;
+            font-weight: 700;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .input-wrapper input {
+            width: 130px;
+            padding: 8px 12px;
+            background: #0f172a;
+            border: 1.5px solid rgba(212, 175, 55, 0.4);
+            border-radius: 10px;
+            color: #fbbf24;
+            font-size: 1.05rem;
+            font-weight: 700;
+            text-align: right;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .input-wrapper input:focus {
+            border-color: #fef08a;
+            box-shadow: 0 0 10px rgba(254, 240, 138, 0.3);
+        }
+
+        .input-wrapper span {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+
+        /* 2x2 그리드 레이아웃 */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        /* 시세 카드 스타일 */
+        .metal-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .metal-card:hover {
+            border-color: rgba(212, 175, 55, 0.4);
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 14px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-subtitle {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .price-row-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px 14px;
+            border-radius: 12px;
+        }
+
+        .price-label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .price-val {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .buy-color { color: #fbbf24; }
+        .sell-color { color: #60a5fa; }
+        .silver-buy-color { color: #e2e8f0; }
+
+        .price-unit {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #cbd5e1;
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 28px;
+        }
+
+        /* 반응형: 화면이 좁아지면 1열로 변경 */
+        @media (max-width: 768px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+            .input-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .input-group {
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>🏆 귀금속 통합 시세 대시보드</h1>
+            <div class="subtitle">3.75g (1돈) 기준 살 때 / 팔 때 시세 계산</div>
+        </div>
+
+        <!-- 기준 시세 일괄 입력바 -->
+        <div class="input-bar">
+            <div class="input-group">
+                <label for="gold-input">🪙 순금(24K) 1돈 살때</label>
+                <div class="input-wrapper">
+                    <input type="number" id="gold-input" value="530000" step="1000" oninput="updateAllPrices()">
+                    <span>원</span>
+                </div>
+            </div>
+            <div class="input-group">
+                <label for="silver-input">🥈 순은(99.9%) 1돈 살때</label>
+                <div class="input-wrapper">
+                    <input type="number" id="silver-input" value="6000" step="100" oninput="updateAllPrices()">
+                    <span>원</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2x2 통합 그리드 시세 카드 -->
+        <div class="grid-container">
+            
+            <!-- 1. 순금 24K -->
+            <div class="metal-card">
+                <div class="card-header">
+                    <div class="card-title">🥇 순금 24K</div>
+                    <div class="card-subtitle">순도 99.9%</div>
+                </div>
+                <div class="price-row-container">
+                    <div class="price-row">
+                        <span class="price-label">🛒 내가 살 때</span>
+                        <div class="price-val buy-color" id="k24-buy">0 <span class="price-unit">원</span></div>
+                    </div>
+                    <div class="price-row">
+                        <span class="price-label">💰 내가 팔 때</span>
+                        <div class="price-val sell-color" id="k24-sell">0 <span class="price-unit">원</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 18K 금 -->
+            <div class="metal-card">
+                <div class="card-header">
+                    <div class="card-title">👑 18K 금</div>
+                    <div class="card-subtitle">순금의 75%</div>
+                </div>
+                <div class="price-row-container">
+                    <div class="price-row">
+                        <span class="price-label">🛒 내가 살 때</span>
+                        <div class="price-val buy-color" id="k18-buy">0 <span class="price-unit">원</span></div>
+                    </div>
+                    <div class="price-row">
+                        <span class="price-label">💰 내가 팔 때</span>
+                        <div class="price-val sell-color" id="k18-sell">0 <span class="price-unit">원</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. 14K 금 -->
+            <div class="metal-card">
+                <div class="card-header">
+                    <div class="card-title">💍 14K 금</div>
+                    <div class="card-subtitle">순금의 58.5%</div>
+                </div>
+                <div class="price-row-container">
+                    <div class="price-row">
+                        <span class="price-label">🛒 내가 살 때</span>
+                        <div class="price-val buy-color" id="k14-buy">0 <span class="price-unit">원</span></div>
+                    </div>
+                    <div class="price-row">
+                        <span class="price-label">💰 내가 팔 때</span>
+                        <div class="price-val sell-color" id="k14-sell">0 <span class="price-unit">원</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. 순은 Silver -->
+            <div class="metal-card" style="border-color: rgba(226, 232, 240, 0.2);">
+                <div class="card-header">
+                    <div class="card-title">🥈 실시간 은(Silver)</div>
+                    <div class="card-subtitle">순은 99.9%</div>
+                </div>
+                <div class="price-row-container">
+                    <div class="price-row">
+                        <span class="price-label">🛒 내가 살 때</span>
+                        <div class="price-val silver-buy-color" id="silver-buy">0 <span class="price-unit">원</span></div>
+                    </div>
+                    <div class="price-row">
+                        <span class="price-label">💰 내가 팔 때</span>
+                        <div class="price-val sell-color" id="silver-sell">0 <span class="price-unit">원</span></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="footer-note">
+            * 입력된 기준가는 브라우저 메모리에 자동 저장됩니다.
+        </div>
+    </div>
+
+    <script>
+        // 초기 저장된 기준가 가져오기
+        window.onload = function() {
+            const savedGold = localStorage.getItem('user_gold_price');
+            const savedSilver = localStorage.getItem('user_silver_price');
+
+            if (savedGold) document.getElementById('gold-input').value = savedGold;
+            if (savedSilver) document.getElementById('silver-input').value = savedSilver;
+
+            updateAllPrices();
+        };
+
+        // 전체 시세 동시 연산 함수
+        function updateAllPrices() {
+            const goldBuyInput = parseFloat(document.getElementById('gold-input').value) || 0;
+            const silverBuyInput = parseFloat(document.getElementById('silver-input').value) || 0;
+
+            // 로컬스토리지에 상태 보존
+            localStorage.setItem('user_gold_price', goldBuyInput);
+            localStorage.setItem('user_silver_price', silverBuyInput);
+
+            // 1. 24K 계산 (팔 때 기준: 약 87%)
+            const k24Buy = goldBuyInput;
+            const k24Sell = Math.round(goldBuyInput * 0.87);
+
+            // 2. 18K 계산 (75%)
+            const k18Buy = Math.round(goldBuyInput * 0.75);
+            const k18Sell = Math.round(k24Sell * 0.75);
+
+            // 3. 14K 계산 (58.5%)
+            const k14Buy = Math.round(goldBuyInput * 0.585);
+            const k14Sell = Math.round(k24Sell * 0.585);
+
+            // 4. 은 계산 (팔 때 기준: 약 80%)
+            const silverBuy = silverBuyInput;
+            const silverSell = Math.round(silverBuyInput * 0.80);
+
+            // 화면에 요소 출력
+            document.getElementById('k24-buy').innerHTML = `${k24Buy.toLocaleString()} <span class="price-unit">원</span>`;
+            document.getElementById('k24-sell').innerHTML = `${k24Sell.toLocaleString()} <span class="price-unit">원</span>`;
+
+            document.getElementById('k18-buy').innerHTML = `${k18Buy.toLocaleString()} <span class="price-unit">원</span>`;
+            document.getElementById('k18-sell').innerHTML = `${k18Sell.toLocaleString()} <span class="price-unit">원</span>`;
+
+            document.getElementById('k14-buy').innerHTML = `${k14Buy.toLocaleString()} <span class="price-unit">원</span>`;
+            document.getElementById('k14-sell').innerHTML = `${k14Sell.toLocaleString()} <span class="price-unit">원</span>`;
+
+            document.getElementById('silver-buy').innerHTML = `${silverBuy.toLocaleString()} <span class="price-unit">원</span>`;
+            document.getElementById('silver-sell').innerHTML = `${silverSell.toLocaleString()} <span class="price-unit">원</span>`;
+        }
+    </script>
+</body>
+</html>
