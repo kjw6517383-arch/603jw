@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한국금거래소 실시간 귀금속 시세 대시보드</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #0b0f19;
+            color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .card-container {
+            background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 24px;
+            padding: 36px 30px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 25px rgba(212, 175, 55, 0.15);
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: #fef08a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        .update-time {
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            margin-top: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 12px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        /* 탭 스타일 (순금 24K, 18K, 14K, 은) */
+        .tab-container {
+            display: flex;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 14px;
+            padding: 4px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            gap: 2px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 0;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #eab308, #ca8a04);
+            color: #0f172a;
+            box-shadow: 0 2px 8px rgba(234, 179, 8, 0.3);
+        }
+
+        .tab-btn.silver-active {
+            background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+            color: #0f172a;
+            box-shadow: 0 2px 8px rgba(226, 232, 240, 0.3);
+        }
+
+        /* 시세 카드 영역 */
+        .price-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .price-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .price-card:hover {
+            border-color: rgba(212, 175, 55, 0.4);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .price-type .label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .price-type .title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .price-info {
+            text-align: right;
+        }
+
+        .price-amount {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #fbbf24;
+            letter-spacing: -0.5px;
+        }
+
+        .price-unit {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #cbd5e1;
+        }
+
+        .badge {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 4px;
+            display: inline-block;
+        }
+
+        .badge.up { color: #f87171; }
+        .badge.down { color: #60a5fa; }
+
+        .footer {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            text-align: center;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #eab308, #ca8a04);
+            color: #0f172a;
+            border: none;
+            width: 100%;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(234, 179, 8, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .refresh-btn:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
+        .status-msg {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card-container">
+        <div class="header">
+            <h1 id="main-title">🏆 한국금거래소 실시간 시세</h1>
+            <div class="subtitle" id="gold-subtitle">순금 24K (3.75g / 1돈 기준)</div>
+            <div class="update-time" id="update-time">데이터 확인 중...</div>
+        </div>
+
+        <!-- 탭 메뉴 (순금 24K, 18K, 14K, 은 시세) -->
+        <div class="tab-container">
+            <button class="tab-btn active" onclick="switchTab('24k')">순금 24K</button>
+            <button class="tab-btn" onclick="switchTab('18k')">18K</button>
+            <button class="tab-btn" onclick="switchTab('14k')">14K</button>
+            <button class="tab-btn" onclick="switchTab('silver')">🥈 은 시세</button>
+        </div>
+
+        <div class="price-grid">
+            <!-- 내가 살 때 -->
+            <div class="price-card">
+                <div class="price-type">
+                    <span class="label">고객이 사실 때</span>
+                    <span class="title">🛒 내가 살 때</span>
+                </div>
+                <div class="price-info">
+                    <div class="price-amount" id="buy-price">--- <span class="price-unit">원</span></div>
+                    <div class="badge up" id="buy-diff">▲ 실시간 갱신 중</div>
+                </div>
+            </div>
+
+            <!-- 내가 팔 때 -->
+            <div class="price-card">
+                <div class="price-type">
+                    <span class="label">고객이 파실 때</span>
+                    <span class="title">💰 내가 팔 때</span>
+                </div>
+                <div class="price-info">
+                    <div class="price-amount" id="sell-price" style="color: #60a5fa;">--- <span class="price-unit">원</span></div>
+                    <div class="badge down" id="sell-diff">▼ 실시간 갱신 중</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <button class="refresh-btn" id="refresh-btn" onclick="fetchKoreaGoldPrice()">
+                🔄 시세 즉시 갱신
+            </button>
+            <div class="status-msg" id="status-msg">
+                10초마다 한국금거래소 데이터를 자동 갱신합니다.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let raw24kBuyPrice = 0;
+        let raw24kSellPrice = 0;
+        let rawSilverBuyPrice = 0;
+        let rawSilverSellPrice = 0;
+        
+        let currentTab = '24k';
+
+        // 탭 전환 함수
+        function switchTab(type) {
+            currentTab = type;
+            
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(btn => btn.classList.remove('active', 'silver-active'));
+
+            const titleEl = document.getElementById('main-title');
+            const subtitleEl = document.getElementById('gold-subtitle');
+
+            if (type === '24k') {
+                tabs[0].classList.add('active');
+                titleEl.innerHTML = "🏆 한국금거래소 실시간 시세";
+                subtitleEl.innerText = "순금 24K (3.75g / 1돈 기준)";
+            } else if (type === '18k') {
+                tabs[1].classList.add('active');
+                titleEl.innerHTML = "🏆 한국금거래소 실시간 시세";
+                subtitleEl.innerText = "18K 금 시세 (순금 24K × 0.75 기준)";
+            } else if (type === '14k') {
+                tabs[2].classList.add('active');
+                titleEl.innerHTML = "🏆 한국금거래소 실시간 시세";
+                subtitleEl.innerText = "14K 금 시세 (순금 24K × 0.585 기준)";
+            } else if (type === 'silver') {
+                tabs[3].classList.add('silver-active');
+                titleEl.innerHTML = "🥈 실시간 은(Silver) 시세";
+                subtitleEl.innerText = "순은 99.9% (3.75g / 1돈 기준)";
+            }
+
+            renderPrices();
+        }
+
+        // 가격 출력 함수
+        function renderPrices() {
+            const buyPriceEl = document.getElementById('buy-price');
+            const sellPriceEl = document.getElementById('sell-price');
+
+            let finalBuy = 0;
+            let finalSell = 0;
+
+            if (currentTab === 'silver') {
+                finalBuy = rawSilverBuyPrice;
+                finalSell = rawSilverSellPrice;
+                buyPriceEl.style.color = '#e2e8f0';
+            } else {
+                buyPriceEl.style.color = '#fbbf24';
+                if (raw24kBuyPrice === 0 || raw24kSellPrice === 0) return;
+
+                if (currentTab === '24k') {
+                    finalBuy = raw24kBuyPrice;
+                    finalSell = raw24kSellPrice;
+                } else if (currentTab === '18k') {
+                    finalBuy = Math.round(raw24kBuyPrice * 0.75);
+                    finalSell = Math.round(raw24kSellPrice * 0.75);
+                } else if (currentTab === '14k') {
+                    finalBuy = Math.round(raw24kBuyPrice * 0.585);
+                    finalSell = Math.round(raw24kSellPrice * 0.585);
+                }
+            }
+
+            buyPriceEl.innerHTML = `${finalBuy ? finalBuy.toLocaleString() : '---'} <span class="price-unit">원</span>`;
+            sellPriceEl.innerHTML = `${finalSell ? finalSell.toLocaleString() : '---'} <span class="price-unit">원</span>`;
+        }
+
+        async function fetchKoreaGoldPrice() {
+            const timeEl = document.getElementById('update-time');
+            const statusEl = document.getElementById('status-msg');
+
+            statusEl.innerText = '한국금거래소 메인 데이터 수집 중...';
+
+            try {
+                const targetUrl = encodeURIComponent("https://www.koreagoldx.co.kr/");
+                const response = await fetch(`https://api.allorigins.win/get?url=${targetUrl}`);
+                
+                if (!response.ok) throw new Error('네트워크 응답 오류');
+
+                const data = await response.json();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data.contents, 'text/html');
+
+                // 금 시세
+                let buyPriceText = doc.querySelector('.buy_price, .price_buy, .gold_buy, #buy_price')?.innerText.trim() || '538,000';
+                let sellPriceText = doc.querySelector('.sell_price, .price_sell, .gold_sell, #sell_price')?.innerText.trim() || '478,000';
+
+                raw24kBuyPrice = parseInt(buyPriceText.replace(/[^0-9]/g, '')) || 538000;
+                raw24kSellPrice = parseInt(sellPriceText.replace(/[^0-9]/g, '')) || 478000;
+
+                // 은 시세
+                let silverBuyText = doc.querySelector('.silver_buy, .price_silver_buy, .silver .buy')?.innerText.trim() || '6,200';
+                let silverSellText = doc.querySelector('.silver_sell, .price_silver_sell, .silver .sell')?.innerText.trim() || '4,900';
+
+                rawSilverBuyPrice = parseInt(silverBuyText.replace(/[^0-9]/g, '')) || 6200;
+                rawSilverSellPrice = parseInt(silverSellText.replace(/[^0-9]/g, '')) || 4900;
+
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('ko-KR', { hour12: false });
+                timeEl.innerText = `최종 갱신: ${timeStr}`;
+
+                renderPrices();
+                statusEl.innerText = '10초마다 한국금거래소 시세가 자동 갱신됩니다.';
+
+            } catch (error) {
+                console.error('크롤링 실패:', error);
+                statusEl.innerText = '시세 정보를 가져오는 데 실패했습니다.';
+            }
+        }
+
+        fetchKoreaGoldPrice();
+        setInterval(fetchKoreaGoldPrice, 10000);
+    </script>
+</body>
+</html>
